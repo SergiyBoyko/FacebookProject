@@ -13,9 +13,14 @@ import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.text.TextUtils;
 import android.view.KeyEvent;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.RelativeLayout;
+import android.widget.Toast;
+
 import com.danvelazco.fbwrapper.activity.BaseFacebookWebViewActivity;
+import com.danvelazco.fbwrapper.activity.MessagesActivity;
 import com.danvelazco.fbwrapper.preferences.FacebookPreferences;
 import com.danvelazco.fbwrapper.util.Logger;
 import com.danvelazco.fbwrapper.util.OrbotHelper;
@@ -37,6 +42,9 @@ public class FbWrapper extends BaseFacebookWebViewActivity {
 
     // Preferences stuff
     private SharedPreferences mSharedPreferences = null;
+
+    //flag: is true if there is a connection error. It should reload the last useful page
+    private boolean noConnectionError = false;
 
     /**
      * {@inheritDoc}
@@ -163,6 +171,82 @@ public class FbWrapper extends BaseFacebookWebViewActivity {
         findViewById(R.id.menu_preferences).setOnClickListener(buttonsListener);
         findViewById(R.id.menu_about).setOnClickListener(buttonsListener);
         findViewById(R.id.menu_kill).setOnClickListener(buttonsListener);
+    }
+
+    //add my menu
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.menu, menu);
+        return true;
+    }
+
+    //handling the tap on the menu's items
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+        switch (id) {
+            case R.id.top: {//scroll on the top of the page
+                jumpToTop();
+                break;
+            }
+            case R.id.openInBrowser: {//open the actual page into using the browser
+                startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(mWebView.getUrl())));
+                break;
+            }
+            case R.id.messages: {//open messages
+                startActivity(new Intent(this, MessagesActivity.class));
+                break;
+            }
+            case R.id.refresh: {//refresh the page
+                RefreshPage();
+                break;
+            }
+            case R.id.home: {//go to the home
+                GoHome();
+                break;
+            }
+//            case R.id.shareLink: {//share this page
+//                Intent sharingIntent = new Intent(android.content.Intent.ACTION_SEND);
+//                sharingIntent.setType("text/plain");
+//                sharingIntent.putExtra(android.content.Intent.EXTRA_TEXT, MyHandler.cleanUrl(webViewFacebook.getUrl()));
+//                startActivity(Intent.createChooser(sharingIntent, getResources().getString(R.string.shareThisLink)));
+//
+//                break;
+//            }
+//            case R.id.share: {//share this app
+//                Intent sharingIntent = new Intent(android.content.Intent.ACTION_SEND);
+//                sharingIntent.setType("text/plain");
+//                sharingIntent.putExtra(android.content.Intent.EXTRA_TEXT, getResources().getString(R.string.downloadThisApp));
+//                startActivity(Intent.createChooser(sharingIntent, getResources().getString(R.string.share)));
+//
+//                Toast.makeText(getApplicationContext(), getResources().getString(R.string.thanks),
+//                        Toast.LENGTH_SHORT).show();
+//                break;
+//            }
+//            case R.id.settings: {//open settings
+//                startActivity(new Intent(this, SettingsActivity.class));
+//                return true;
+//            }
+//
+            case R.id.exit: {//open settings
+                android.os.Process.killProcess(android.os.Process.myPid());
+                System.exit(1);
+                return true;
+            }
+
+            default:
+                break;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    private void RefreshPage() {
+        mWebView.reload();
+    }
+
+    private void GoHome() {
+        mWebView.loadUrl(getString(R.string.urlFacebookMobile));
     }
 
     /**
