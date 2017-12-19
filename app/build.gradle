@@ -7,6 +7,10 @@ buildscript {
 }
 
 android {
+    useLibrary 'org.apache.http.legacy'
+}
+
+android {
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_7
         targetCompatibility JavaVersion.VERSION_1_7
@@ -48,6 +52,7 @@ android {
 final SUPPORT_LIBRARY_VERSION = rootProject.ext.SUPPORT_LIBRARY_VERSION
 
 dependencies {
+    compile 'com.android.support:appcompat-v7:22.2.0'
     compile "com.android.support:support-v4:${SUPPORT_LIBRARY_VERSION}"
     compile 'com.squareup.picasso:picasso:2.5.2'
 }

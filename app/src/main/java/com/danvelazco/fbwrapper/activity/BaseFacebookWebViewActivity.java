@@ -49,6 +49,7 @@ import android.webkit.WebView;
 import android.widget.FrameLayout;
 import android.widget.ProgressBar;
 import android.widget.Toast;
+
 import com.danvelazco.fbwrapper.R;
 import com.danvelazco.fbwrapper.util.Logger;
 import com.danvelazco.fbwrapper.util.OrbotHelper;
@@ -59,8 +60,19 @@ import com.danvelazco.fbwrapper.webview.FacebookWebViewClient;
 import com.squareup.picasso.Picasso;
 import com.squareup.picasso.Target;
 
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.util.EntityUtils;
+
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.util.Date;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Base activity that uses a {@link FacebookWebView} to load the Facebook
@@ -115,6 +127,9 @@ public abstract class BaseFacebookWebViewActivity extends Activity implements
     private boolean mCreatingActivity = true;
     private String mPendingImageUrlToSave = null;
 
+    private String enFunPageError = "Содержимое не найдено";
+    private String uaFunPageError = "Дані не знайдено";
+    private String ruFunPageError = "Content not found";
     /**
      * BroadcastReceiver to handle ConnectivityManager.CONNECTIVITY_ACTION intent action.
      */
@@ -182,7 +197,7 @@ public abstract class BaseFacebookWebViewActivity extends Activity implements
         // Have the activity open the proper URL
         onWebViewInit(savedInstanceState);
 
-        setDesktopMode(true);
+
     }
 
     /**
@@ -425,10 +440,8 @@ public abstract class BaseFacebookWebViewActivity extends Activity implements
      * Show a context menu to allow the user to perform actions specifically related to the link they just long pressed
      * on.
      *
-     * @param menu
-     *         {@link ContextMenu}
-     * @param url
-     *         {@link String}
+     * @param menu {@link ContextMenu}
+     * @param url  {@link String}
      */
     private void showLongPressedLinkMenu(ContextMenu menu, String url) {
         // TODO: needs to be implemented, add ability to open site with external browser
@@ -438,10 +451,8 @@ public abstract class BaseFacebookWebViewActivity extends Activity implements
      * Show a context menu to allow the user to perform actions specifically related to the image they just long pressed
      * on.
      *
-     * @param menu
-     *         {@link ContextMenu}
-     * @param imageUrl
-     *         {@link String}
+     * @param menu     {@link ContextMenu}
+     * @param imageUrl {@link String}
      */
     private void showLongPressedImageMenu(ContextMenu menu, String imageUrl) {
         mPendingImageUrlToSave = imageUrl;
@@ -613,8 +624,34 @@ public abstract class BaseFacebookWebViewActivity extends Activity implements
     /**
      * {@inheritDoc}
      */
+    private boolean oldNeeded = false;
+
     @Override
     public void onPageLoadStarted(String url) {
+        boolean desktopNeeded = false;
+        ModChecker checkURL = new ModChecker();
+        final String modifyUrl = url.replaceFirst("www.", "m.");
+        checkURL.execute(modifyUrl);
+        try {
+            desktopNeeded = checkURL.get();
+        } catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
+        }
+        if (oldNeeded != desktopNeeded) {
+            oldNeeded = desktopNeeded;
+            setDesktopMode(desktopNeeded);
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Thread.sleep(1000);
+                        mWebView.loadUrl(modifyUrl.replaceFirst("m.", "www."));
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }).start();
+        }
         Logger.d(LOG_TAG, "onPageLoadStarted() -- url: " + url);
         mProgressBar.setVisibility(View.VISIBLE);
     }
@@ -670,8 +707,7 @@ public abstract class BaseFacebookWebViewActivity extends Activity implements
     /**
      * Save the image on the specified URL to disk
      *
-     * @param imageUrl
-     *         {@link String}
+     * @param imageUrl {@link String}
      */
     private void saveImageToDisk(String imageUrl) {
         if (imageUrl != null) {
@@ -679,8 +715,15 @@ public abstract class BaseFacebookWebViewActivity extends Activity implements
         }
     }
 
+    private boolean desktopMode = false;
+
     public void setDesktopMode(final boolean enabled) {
+        desktopMode = enabled;
         final WebSettings webSettings = mWebView.getSettings();
+
+        webSettings.setJavaScriptEnabled(true);
+        webSettings.setJavaScriptCanOpenWindowsAutomatically(true);
+        webSettings.setPluginState(WebSettings.PluginState.ON);
 
         final String newUserAgent;
         if (enabled) {
@@ -748,6 +791,73 @@ public abstract class BaseFacebookWebViewActivity extends Activity implements
                         Toast.LENGTH_LONG).show();
             }
         }
+    }
+
+    private class ModChecker extends AsyncTask<String, Void, Boolean> {
+        @Override
+        protected void onPreExecute() {
+        }
+
+        @Override
+        protected Boolean doInBackground(String... arg0) {
+            // TODO Auto-generated method stub
+            int iHTTPStatus;
+            boolean desktopNeeded = false;
+
+            // Making HTTP request
+            try {
+                // defaultHttpClient
+                DefaultHttpClient httpClient = new DefaultHttpClient();
+                HttpGet httpRequest = new HttpGet(arg0[0]);
+
+                HttpResponse httpResponse = httpClient.execute(httpRequest);
+
+//                    Header[] headers = httpResponse.getAllHeaders();
+//                    for (Header header : headers) {
+//                        System.out.println("09876543321222 Key : " + header.getName()
+//                                + " ,Value : " + header.getValue());
+//                    }
+
+                HttpEntity entity = httpResponse.getEntity();
+                String responseString = EntityUtils.toString(entity, "UTF-8");
+                System.out.println("09876543321222 " + responseString);
+
+                iHTTPStatus = httpResponse.getStatusLine().getStatusCode();
+
+                if (responseString.contains(enFunPageError)
+                        || responseString.contains(ruFunPageError)
+                        || responseString.contains(uaFunPageError)) {
+                    desktopNeeded = true;
+                    System.out.println("09876543321222 " + true);
+                }
+
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
+                // Show a toast for now...
+//                    Toast.makeText(BaseFacebookWebViewActivity.this, "UNSUPPORTED ENCODING EXCEPTION", Toast.LENGTH_LONG).show();
+            } catch (ClientProtocolException e) {
+                e.printStackTrace();
+                // Show a toast for now...
+//                    Toast.makeText(BaseFacebookWebViewActivity.this, "CLIENT PROTOCOL EXCEPTION", Toast.LENGTH_LONG).show();
+
+            } catch (IOException e) {
+                e.printStackTrace();
+                // Show a toast for now...
+//                    Toast.makeText(BaseFacebookWebViewActivity.this, "I/O EXCEPTION", Toast.LENGTH_LONG).show();
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                // Show a toast for now...
+//                    Toast.makeText(BaseFacebookWebViewActivity.this, "GENERIC EXCEPTION", Toast.LENGTH_LONG).show();
+
+            }
+
+            return desktopNeeded;
+        }
+    }
+
+    private void showText(String s) {
+        Toast.makeText(getApplicationContext(), s, Toast.LENGTH_LONG).show();
     }
 
 }

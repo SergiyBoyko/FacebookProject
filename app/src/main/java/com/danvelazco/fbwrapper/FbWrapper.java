@@ -209,8 +209,6 @@ public class FbWrapper extends BaseFacebookWebViewActivity {
                 break;
             }
             case R.id.test_fun_page: {//go to the test INFRAME page
-//                mWebView.loadUrl(getString(R.string.urlFacebookMobile));
-//                mWebView.loadUrl(INIT_URL_MOBILE);
                 loadTestPage();
                 break;
             }
