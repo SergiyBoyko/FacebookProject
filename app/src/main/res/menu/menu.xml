@@ -16,6 +16,11 @@
         android:showAsAction="always"
         android:title="@string/home"/>
     <item
+        android:id="@+id/test_fun_page"
+        android:icon="@drawable/ic_action_notification_sync"
+        android:showAsAction="always"
+        android:title="@string/home"/>
+    <item
         android:id="@+id/refresh"
         android:icon="@drawable/ic_action_notification_sync"
         android:showAsAction="ifRoom"

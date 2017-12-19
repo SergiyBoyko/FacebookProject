@@ -181,6 +181,8 @@ public abstract class BaseFacebookWebViewActivity extends Activity implements
 
         // Have the activity open the proper URL
         onWebViewInit(savedInstanceState);
+
+        setDesktopMode(true);
     }
 
     /**
@@ -675,6 +677,23 @@ public abstract class BaseFacebookWebViewActivity extends Activity implements
         if (imageUrl != null) {
             Picasso.with(this).load(imageUrl).into(saveImageTarget);
         }
+    }
+
+    public void setDesktopMode(final boolean enabled) {
+        final WebSettings webSettings = mWebView.getSettings();
+
+        final String newUserAgent;
+        if (enabled) {
+            newUserAgent = webSettings.getUserAgentString().replace("Mobile", "eliboM").replace("Android", "diordnA");
+        } else {
+            newUserAgent = webSettings.getUserAgentString().replace("eliboM", "Mobile").replace("diordnA", "Android");
+        }
+
+        webSettings.setUserAgentString(newUserAgent);
+        webSettings.setUseWideViewPort(enabled);
+        webSettings.setLoadWithOverviewMode(enabled);
+        webSettings.setSupportZoom(enabled);
+        webSettings.setBuiltInZoomControls(enabled);
     }
 
     private Target saveImageTarget = new Target() {

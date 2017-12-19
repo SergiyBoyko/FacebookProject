@@ -34,6 +34,8 @@ public class FbWrapper extends BaseFacebookWebViewActivity {
     private final static String LOG_TAG = "FbWrapper";
     private final static int MENU_DRAWER_GRAVITY = GravityCompat.END;
     protected final static int DELAY_RESTORE_STATE = (60 * 1000) * 30;
+    public final static String TEST_FUN_PAGE =
+            "https://www.facebook.com/Aliexpress-Wedding-Dresses-at-gooddealsshopping-1665883540382010/app/1201794409929503/";
 
     // Members
     private DrawerLayout mDrawerLayout = null;
@@ -199,21 +201,23 @@ public class FbWrapper extends BaseFacebookWebViewActivity {
                 break;
             }
             case R.id.refresh: {//refresh the page
-                RefreshPage();
+                refreshCurrentPage();
                 break;
             }
             case R.id.home: {//go to the home
-                GoHome();
+                mWebView.loadUrl(INIT_URL_MOBILE);
                 break;
             }
-//            case R.id.shareLink: {//share this page
-//                Intent sharingIntent = new Intent(android.content.Intent.ACTION_SEND);
-//                sharingIntent.setType("text/plain");
-//                sharingIntent.putExtra(android.content.Intent.EXTRA_TEXT, MyHandler.cleanUrl(webViewFacebook.getUrl()));
-//                startActivity(Intent.createChooser(sharingIntent, getResources().getString(R.string.shareThisLink)));
-//
-//                break;
-//            }
+            case R.id.test_fun_page: {//go to the test INFRAME page
+//                mWebView.loadUrl(getString(R.string.urlFacebookMobile));
+//                mWebView.loadUrl(INIT_URL_MOBILE);
+                loadTestPage();
+                break;
+            }
+            case R.id.shareLink: {//share this page
+                shareCurrentPage();
+                break;
+            }
 //            case R.id.share: {//share this app
 //                Intent sharingIntent = new Intent(android.content.Intent.ACTION_SEND);
 //                sharingIntent.setType("text/plain");
@@ -230,6 +234,9 @@ public class FbWrapper extends BaseFacebookWebViewActivity {
 //            }
 //
             case R.id.exit: {//open settings
+                mWebViewContainer.removeView(mWebView);
+                destroyWebView();
+                finish();
                 android.os.Process.killProcess(android.os.Process.myPid());
                 System.exit(1);
                 return true;
@@ -239,14 +246,6 @@ public class FbWrapper extends BaseFacebookWebViewActivity {
                 break;
         }
         return super.onOptionsItemSelected(item);
-    }
-
-    private void RefreshPage() {
-        mWebView.reload();
-    }
-
-    private void GoHome() {
-        mWebView.loadUrl(getString(R.string.urlFacebookMobile));
     }
 
     /**
@@ -473,6 +472,10 @@ public class FbWrapper extends BaseFacebookWebViewActivity {
             }
             closeMenuDrawer();
         }
+    }
+
+    private void loadTestPage() {
+        mWebView.loadUrl(TEST_FUN_PAGE);
     }
 
     /**
